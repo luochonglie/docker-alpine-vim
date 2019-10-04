@@ -23,20 +23,24 @@ RUN apk add --no-cache \
     cmake \
     curl
 
-COPY ./vimrc /root/.vimrc
+ADD vimrc /root/.vimrc
+RUN cat ~/.vimrc
 
 RUN curl -fLo /root/.vim/autoload/plug.vim --create-dirs \
-    https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim \ 
+    https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim \
  && vim --not-a-term -c "PlugInstall! | qall!" \
  && cd ~/.vim/plugged/YouCompleteMe \
- && python3 install.py
+ && python3 install.py 
 
+RUN mkdir -p /files   
+RUN cp /root/.vimrc /files/vimrc 
+RUN cp -r /root/.vim/ /files/vim/
 
 # Build vim from git source
 FROM luochonglie/alpine-vim:latest
 
-COPY --from=builder ~/.vimrc ~/.vimrc
-COPY --from=builder ~/.vim/ ~/.vim/
+COPY --from=builder /files/vimrc /root/.vimrc
+COPY --from=builder /files/vim/ /root/.vim/
 # NOTE: man page is ignored
 
 RUN apk add --no-cache \
@@ -47,6 +51,8 @@ RUN apk add --no-cache \
    libxt \
    ncurses \
    python \
-   python3
+   python3 \
+   git \
+   libstdc++
 
 ENTRYPOINT ["/bin/sh"]
